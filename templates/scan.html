@@ -114,7 +114,7 @@
             <!-- Failed Delivery -->
             <div class="mt-3" id="failed-group" style="display:none;">
                 <label class="form-label">Reason for Failure:</label>
-                <textarea name="failure_reason" class="form-control" rows="3"></textarea>
+                <textarea name="failure_reason" class="form-control" rows	="3"></textarea>
 
                 <label class="form-label mt-2">Receiver Name:</label>
                 <input type="text" name="receiver_signature_failed" class="form-control mb-2">
@@ -172,6 +172,13 @@
             photoGroup.style.display = (event === 'left_site') ? 'none' : 'block';
             apSig.style.display   = (event === 'leaving_ap') ? 'block' : 'none';
             leftGroup.style.display = (event === 'left_site') ? 'block' : 'none';
+
+            // Enable / disable and set required on photo inputs based on event
+            const photoInputs = document.querySelectorAll('#photo-inputs input[type="file"]');
+            photoInputs.forEach(inp => {
+                inp.disabled = (event === 'left_site');
+                inp.required = (event !== 'left_site');
+            });
         }
 
         radios.forEach(radio => radio.addEventListener('change', toggleFields));
