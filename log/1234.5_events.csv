@@ -1,4 +1,0 @@
-Timestamp,Loadsheet No,Job No,Event,AP Staff,Photos,Delivery Outcome,Delivered Panels,Receiver Signature,Failure Reason
-2025-06-23 09:02:34,1234.5,,leaving_ap,AR,leaving_ap_1_2025-06-23 09-02-34.jpg;leaving_ap_2_2025-06-23 09-02-34.jpg,,,,
-2025-06-23 09:03:09,1234.5,,arrived_site,,arrived_site_1_2025-06-23 09-03-09.jpg;arrived_site_2_2025-06-23 09-03-09.jpg,,,,
-2025-06-23 09:03:27,1234.5,,left_site,,,partial,22;23,RA,crane unavailable

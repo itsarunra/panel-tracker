@@ -1,4 +1,0 @@
-Timestamp,Loadsheet No,Job No,Event,AP Staff,Photos,Delivery Outcome,Delivered Panels,Receiver Signature,Failure Reason
-2025-06-23 16:11:10,1234.7,1234,leaving_ap,AR,,,,,
-2025-06-23 16:11:13,1234.7,1234,arrived_site,,,,,,
-2025-06-23 16:11:24,1234.7,1234,left_site,,,partial,45,RA,late arrival
