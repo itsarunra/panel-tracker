@@ -114,7 +114,7 @@
             <!-- Failed Delivery -->
             <div class="mt-3" id="failed-group" style="display:none;">
                 <label class="form-label">Reason for Failure:</label>
-                <textarea name="failure_reason" class="form-control" rows	="3"></textarea>
+                <textarea name="failure_reason" class="form-control" rows="3"></textarea>
 
                 <label class="form-label mt-2">Receiver Name:</label>
                 <input type="text" name="receiver_signature_failed" class="form-control mb-2">
@@ -127,6 +127,23 @@
 
         <button type="submit" class="btn btn-success w-100">Submit</button>
     </form>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="successModalLabel">Submission Successful</h5>
+          </div>
+          <div class="modal-body">
+            Your event has been recorded.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@2.3.2/dist/signature_pad.min.js"></script>
@@ -147,6 +164,7 @@
         const pad = new SignaturePad(canvas);
         pads[canvasId] = pad;
 
+        // Save signature on submit
         document.querySelector('form').addEventListener('submit', function () {
             const dataUrl = pad.toDataURL("image/png");
             document.getElementById(hiddenInputId).value = dataUrl;
@@ -158,6 +176,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('form');
         const radios = document.querySelectorAll('input[name="event_type"]');
         const photoGroup = document.getElementById('photo-group');
         const apSig = document.getElementById('ap-signature-group');
@@ -173,7 +192,7 @@
             apSig.style.display   = (event === 'leaving_ap') ? 'block' : 'none';
             leftGroup.style.display = (event === 'left_site') ? 'block' : 'none';
 
-            // Enable / disable and set required on photo inputs based on event
+            // Enable/disable required on photo inputs
             const photoInputs = document.querySelectorAll('#photo-inputs input[type="file"]');
             photoInputs.forEach(inp => {
                 inp.disabled = (event === 'left_site');
@@ -190,11 +209,32 @@
         }));
         toggleFields();
 
-        // Signature pads
+        // Initialize signature pads
         setupPad("ap_signature_pad", "ap_signature_img");
         setupPad("receiver_signature_full_pad", "receiver_signature_full_img");
         setupPad("receiver_signature_partial_pad", "receiver_signature_partial_img");
         setupPad("receiver_signature_failed_pad", "receiver_signature_failed_img");
+
+        // Intercept form submit to use AJAX and show modal
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const data = new FormData(form);
+            try {
+                const resp = await fetch(form.action, { method: form.method, body: data });
+                if (resp.redirected || resp.ok) {
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+                    form.reset();
+                    Object.values(pads).forEach(pad => pad.clear());
+                    toggleFields();
+                } else {
+                    alert('Submission failed.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('An error occurred.');
+            }
+        });
 
         // Resize pads on window resize
         window.addEventListener('resize', function() {
