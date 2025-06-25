@@ -1,0 +1,63 @@
+{% extends "layout.html" %}
+{% block content %}
+  <h2 class="mb-4">Delivery Analysis</h2>
+
+  <form method="post" class="row g-3 mb-5">
+    <div class="col-auto">
+      <input type="text" class="form-control" name="loadsheet" placeholder="Loadsheet No" required>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary mb-3">Load Metrics</button>
+    </div>
+  </form>
+
+  {% if result %}
+    {% if result.error %}
+      <div class="alert alert-warning">{{ result.error }}</div>
+    {% else %}
+      <div class="alert alert-info">
+        <strong>Note:</strong> On-site time beyond 2 h is back-charged at $200/hr (pro-rated).
+      </div>
+      <table class="table table-bordered w-75">
+        <tr>
+          <th>Loadsheet No</th>
+          <td>{{ result.loadsheet }}</td>
+        </tr>
+        <tr>
+          <th>Job No</th>
+          <td>{{ result.job_no }}</td>
+        </tr>
+        <tr>
+          <th>Left AP</th>
+          <td>{{ result.left_ap }}</td>
+        </tr>
+        <tr>
+          <th>Arrived Site</th>
+          <td>{{ result.arrived }}</td>
+        </tr>
+        <tr>
+          <th>Left Site</th>
+          <td>{{ result.left_site }}</td>
+        </tr>
+        <tr>
+          <th>Time Traveling</th>
+          <td>{{ result.travel or 'N/A' }}</td>
+        </tr>
+        <tr>
+          <th>Time On-Site</th>
+          <td>{{ result.onsite or 'N/A' }}</td>
+        </tr>
+        <tr>
+          <th>Back-Charge</th>
+          <td>
+            {% if result.back_charge is not none and result.back_charge > 0 %}
+              ${{ '{:,.2f}'.format(result.back_charge) }}
+            {% else %}
+              $0.00
+            {% endif %}
+          </td>
+        </tr>
+      </table>
+    {% endif %}
+  {% endif %}
+{% endblock %}

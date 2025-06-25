@@ -1,0 +1,93 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2 class="mb-4">Dispatcher Dashboard</h2>
+
+<h4>Uploaded Loads</h4>
+<table class="table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>Timestamp</th>
+      <th>Loadsheet No</th>
+      <th>Job No</th>
+      <th>Description</th>
+      <th>Driver</th>
+      <th>Panel Count</th>
+      <th>Panel IDs</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in dispatch_records %}
+    <tr>
+      <td>{{ row['Timestamp'] }}</td>
+      <td>{{ row['Loadsheet No'] }}</td>
+      <td>{{ row['Job No'] }}</td>
+      <td>{{ row['Description'] }}</td>
+      <td>{{ row['Driver'] }}</td>
+      <td>{{ row['Panel Count'] }}</td>
+      <td>{{ row['Panel IDs'] }}</td>
+      <td>
+        <a href="{{ url_for('generate_docket', loadsheet=row['Loadsheet No']) }}" class="btn btn-sm btn-outline-primary" target="_blank">Docket</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h4 class="mt-5">Delivery Events</h4>
+<table class="table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>Timestamp</th>
+      <th>Loadsheet No</th>
+      <th>Job No</th>
+      <th>Event</th>
+      <th>AP Staff</th>
+      <th>Photos</th>
+      <th>Outcome</th>
+      <th>Panels</th>
+      <th>Signature</th>
+      <th>Reason</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in event_records %}
+    <tr>
+      <td>{{ row['Timestamp'] }}</td>
+      <td>{{ row['Loadsheet No'] }}</td>
+      <td>{{ row['Job No'] }}</td>
+      <td>{{ row['Event'] }}</td>
+      <td>{{ row['AP Staff'] }}</td>
+      <td>
+        {% set photos = row['Photos'] %}
+        {% if photos %}
+          {% for fn in photos.split(';') %}
+            <a href="{{ url_for('get_photo', loadsheet=row['Loadsheet No'], event=row['Event'], filename=fn) }}" target="_blank">{{ fn }}</a><br>
+          {% endfor %}
+        {% endif %}
+      </td>
+      <td>{{ row['Delivery Outcome'] }}</td>
+      <td>
+        {% set delivered = row['Delivered Panels'] %}
+        {% if delivered %}
+          {% for pid in delivered.split(';') %}
+            <span class="badge bg-info text-dark me-1">{{ pid }}</span>
+          {% endfor %}
+        {% endif %}
+      </td>
+      <td>{{ row['Receiver Signature'] }}</td>
+      <td>{{ row['Failure Reason'] }}</td>
+      <td>
+        <a href="{{ url_for('edit_event', loadsheet=row['Loadsheet No'], timestamp=row['Timestamp']) }}" class="btn btn-sm btn-primary mb-1">Edit</a>
+        <form action="{{ url_for('delete_event') }}" method="post" style="display:inline;">
+          <input type="hidden" name="loadsheet" value="{{ row['Loadsheet No'] }}">
+          <input type="hidden" name="timestamp"  value="{{ row['Timestamp'] }}">
+          <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this event?');">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

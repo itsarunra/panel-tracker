@@ -1,0 +1,192 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container py-4">
+    <h3 class="mb-3 text-primary">Panel Delivery – Loadsheet {{ loadsheet }}</h3>
+
+    <!-- Panel List -->
+    <div class="mb-3">
+        <strong>Panels in Loadsheet:</strong>
+        <ul class="list-group">
+            {% for panel in panel_ids %}
+            <li class="list-group-item">{{ panel }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <hr>
+
+    <!-- Event Form -->
+    <form action="/submit_event" method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow-sm">
+        <!-- Hidden identifiers -->
+        <input type="hidden" name="loadsheet" value="{{ loadsheet }}">
+        <input type="hidden" name="job_no" value="{{ job_no }}">
+
+        <!-- Event Selection -->
+        <div class="mb-3">
+            <label class="form-label">Select Event:</label><br>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="event_type" id="leaving_ap" value="leaving_ap" checked>
+              <label class="form-check-label" for="leaving_ap">Leaving AP</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="event_type" id="arrived_site" value="arrived_site">
+              <label class="form-check-label" for="arrived_site">Arrived Site</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="event_type" id="left_site" value="left_site">
+              <label class="form-check-label" for="left_site">Left Site</label>
+            </div>
+        </div>
+
+        <!-- Photo Upload -->
+        <div class="mb-3" id="photo-group">
+            <label class="form-label">Upload Truck Photos (Driver side & Far side):</label>
+            <div id="photo-inputs">
+                <input type="file" name="photos" accept="image/*" class="form-control mb-2" required>
+                <input type="file" name="photos" accept="image/*" class="form-control mb-2" required>
+            </div>
+            <button type="button" id="add-photo-btn" class="btn btn-sm btn-outline-secondary mt-2">Add Photo</button>
+        </div>
+
+        <!-- AP Signature (Leaving AP) -->
+        <div class="mb-3" id="ap-signature-group">
+            <label class="form-label">AP Staff Name:</label>
+            <input type="text" name="ap_staff" class="form-control mb-2">
+            <label class="form-label">Signature:</label>
+            <canvas id="ap_signature_pad" style="border:1px solid #ccc; width:100%; height:150px;"></canvas>
+            <input type="hidden" name="ap_signature_img" id="ap_signature_img">
+            <button type="button" class="btn btn-sm btn-outline-secondary my-2" onclick="clearPad('ap_signature_pad')">Clear Signature</button>
+        </div>
+
+        <!-- Left Site Details -->
+        <div class="mb-3" id="left-site-group" style="display:none;">
+            <label class="form-label">Delivery Outcome:</label><br>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="delivery_outcome" id="out_full" value="full">
+              <label class="form-check-label" for="out_full">Fully Delivered</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="delivery_outcome" id="out_partial" value="partial">
+              <label class="form-check-label" for="out_partial">Partially Delivered</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="delivery_outcome" id="out_failed" value="failed">
+              <label class="form-check-label" for="out_failed">Failed Delivery</label>
+            </div>
+
+            <!-- Fully Delivered -->
+            <div class="mt-3" id="full-group" style="display:none;">
+                <label class="form-label">Receiver Name:</label>
+                <input type="text" name="receiver_signature_full" class="form-control mb-2">
+                <label class="form-label">Signature:</label>
+                <canvas id="receiver_signature_full_pad" style="border:1px solid #ccc; width:100%; height:150px;"></canvas>
+                <input type="hidden" name="receiver_signature_full_img" id="receiver_signature_full_img">
+                <button type="button" class="btn btn-sm btn-outline-secondary my-2" onclick="clearPad('receiver_signature_full_pad')">Clear Signature</button>
+            </div>
+
+            <!-- Partial Delivery -->
+            <div class="mt-3" id="partial-group" style="display:none;">
+                <label class="form-label">Select Delivered Panels:</label>
+                <div class="list-group mb-2" style="max-height:150px; overflow:auto;">
+                  {% for panel in panel_ids %}
+                  <label class="list-group-item">
+                    <input class="form-check-input me-1" type="checkbox" name="delivered_panels" value="{{ panel }}">{{ panel }}
+                  </label>
+                  {% endfor %}
+                </div>
+                <label class="form-label">Receiver Name:</label>
+                <input type="text" name="receiver_signature_partial" class="form-control mb-2">
+                <label class="form-label">Signature:</label>
+                <canvas id="receiver_signature_partial_pad" style="border:1px solid #ccc; width:100%; height:150px;"></canvas>
+                <input type="hidden" name="receiver_signature_partial_img" id="receiver_signature_partial_img">
+                <button type="button" class="btn btn-sm btn-outline-secondary my-2" onclick="clearPad('receiver_signature_partial_pad')">Clear Signature</button>
+
+                <label class="form-label">Reason for Partial Delivery:</label>
+                <textarea name="partial_reason" class="form-control" rows="2"></textarea>
+            </div>
+
+            <!-- Failed Delivery -->
+            <div class="mt-3" id="failed-group" style="display:none;">
+                <label class="form-label">Reason for Failure:</label>
+                <textarea name="failure_reason" class="form-control" rows="3"></textarea>
+
+                <label class="form-label mt-2">Receiver Name:</label>
+                <input type="text" name="receiver_signature_failed" class="form-control mb-2">
+                <label class="form-label">Signature:</label>
+                <canvas id="receiver_signature_failed_pad" style="border:1px solid #ccc; width:100%; height:150px;"></canvas>
+                <input type="hidden" name="receiver_signature_failed_img" id="receiver_signature_failed_img">
+                <button type="button" class="btn btn-sm btn-outline-secondary my-2" onclick="clearPad('receiver_signature_failed_pad')">Clear Signature</button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success w-100">Submit</button>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@2.3.2/dist/signature_pad.min.js"></script>
+<script>
+    const pads = {};
+
+    function setupPad(canvasId, hiddenInputId) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const pad = new SignaturePad(canvas);
+        pads[canvasId] = pad;
+
+        document.querySelector('form').addEventListener('submit', function () {
+            if (!pad.isEmpty()) {
+                const dataUrl = pad.toDataURL("image/png");
+                document.getElementById(hiddenInputId).value = dataUrl;
+            }
+        });
+    }
+
+    function clearPad(canvasId) {
+        if (pads[canvasId]) pads[canvasId].clear();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const radios = document.querySelectorAll('input[name="event_type"]');
+        const photoGroup = document.getElementById('photo-group');
+        const apSig = document.getElementById('ap-signature-group');
+        const leftGroup = document.getElementById('left-site-group');
+        const fullGroup = document.getElementById('full-group');
+        const partialGroup = document.getElementById('partial-group');
+        const failedGroup = document.getElementById('failed-group');
+        const outcomeRadios = document.querySelectorAll('input[name="delivery_outcome"]');
+
+        function toggleFields() {
+            const event = document.querySelector('input[name="event_type"]:checked').value;
+            photoGroup.style.display = (event === 'left_site') ? 'none' : 'block';
+            apSig.style.display   = (event === 'leaving_ap') ? 'block' : 'none';
+            leftGroup.style.display = (event === 'left_site') ? 'block' : 'none';
+        }
+
+        radios.forEach(radio => radio.addEventListener('change', toggleFields));
+        outcomeRadios.forEach(radio => radio.addEventListener('change', function() {
+            const val = document.querySelector('input[name="delivery_outcome"]:checked').value;
+            fullGroup.style.display    = (val === 'full') ? 'block' : 'none';
+            partialGroup.style.display = (val === 'partial') ? 'block' : 'none';
+            failedGroup.style.display  = (val === 'failed') ? 'block' : 'none';
+        }));
+        toggleFields();
+
+        // Signature pads
+        setupPad("ap_signature_pad", "ap_signature_img");
+        setupPad("receiver_signature_full_pad", "receiver_signature_full_img");
+        setupPad("receiver_signature_partial_pad", "receiver_signature_partial_img");
+        setupPad("receiver_signature_failed_pad", "receiver_signature_failed_img");
+
+        // Add more photo inputs dynamically
+        document.getElementById('add-photo-btn').addEventListener('click', function() {
+            const container = document.getElementById('photo-inputs');
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.name = 'photos';
+            input.accept = 'image/*';
+            input.className = 'form-control mb-2';
+            container.appendChild(input);
+        });
+    });
+</script>
+{% endblock %}

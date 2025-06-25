@@ -1,0 +1,4 @@
+Timestamp,Loadsheet No,Job No,Event,AP Staff,Photos,Delivery Outcome,Delivered Panels,Receiver Signature,Failure Reason
+2025-06-23 12:19:53,1234.6,,leaving_ap,AR,leaving_ap_1_2025-06-23 12-19-53.jpg;leaving_ap_2_2025-06-23 12-19-53.jpg,,,,
+2025-06-23 12:20:05,1234.6,,arrived_site,,arrived_site_1_2025-06-23 12-20-05.jpg;arrived_site_2_2025-06-23 12-20-05.jpg,,,,
+2025-06-23 12:20:19,1234.6,,left_site,,,partial,33,RA,arrived late

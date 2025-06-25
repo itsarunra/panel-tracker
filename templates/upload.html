@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2 class="mb-4">Enter Loadsheet Info</h2>
+
+<form method="post">
+    <div class="mb-3">
+        <label class="form-label">Loadsheet Number</label>
+        <input type="text" name="loadsheet_no" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Job Number</label>
+        <input type="text" name="job_no" class="form-control" required>
+        </div>
+    <div class="mb-3">
+        <label class="form-label">Driver</label>
+        <input type="text" name="driver" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Panel IDs (one per line)</label>
+        <textarea name="panels" class="form-control" rows="6" placeholder="e.g. P001\nP002\nP003" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Generate QR</button>
+</form>
+
+{% if job_no %}
+<div class="mt-5 p-4 bg-white border rounded shadow-sm">
+    <h4 class="text-success">Loadsheet Saved</h4>
+    <p><strong>Loadsheet No:</strong> {{ loadsheet_no }}</p>
+    <p><strong>Job No:</strong> {{ job_no }}</p>
+    <p><strong>Description:</strong> {{ job_desc }}</p>
+    <p><strong>Driver:</strong> {{ driver }}</p>
+    <p><strong>Total Panels:</strong> {{ panel_count }}</p>
+
+    <h5 class="mt-4">Scan QR to Update Status:</h5>
+    <p><a href="{{ qr_url }}" target="_blank">{{ qr_url }}</a></p>
+    <img src="data:image/png;base64,{{ qr_img }}" class="img-thumbnail" style="max-width:300px;" alt="QR Code">
+
+    <p class="mt-3">
+        <a href="{{ qr_download }}" class="btn btn-outline-secondary" download>Download QR Code</a>
+    </p>
+</div>
+{% endif %}
+{% endblock %}
