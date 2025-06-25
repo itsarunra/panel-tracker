@@ -1,5 +1,11 @@
 {% extends "layout.html" %}
 {% block content %}
+<style>
+  /* Prevent touch scroll on signature pads */
+  canvas {
+    touch-action: none;
+  }
+</style>
 <div class="container py-4">
     <h3 class="mb-3 text-primary">Panel Delivery – Loadsheet {{ loadsheet }}</h3>
 
@@ -127,17 +133,23 @@
 <script>
     const pads = {};
 
+    function resizeCanvas(canvas) {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+    }
+
     function setupPad(canvasId, hiddenInputId) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
+        resizeCanvas(canvas);
         const pad = new SignaturePad(canvas);
         pads[canvasId] = pad;
 
         document.querySelector('form').addEventListener('submit', function () {
-            if (!pad.isEmpty()) {
-                const dataUrl = pad.toDataURL("image/png");
-                document.getElementById(hiddenInputId).value = dataUrl;
-            }
+            const dataUrl = pad.toDataURL("image/png");
+            document.getElementById(hiddenInputId).value = dataUrl;
         });
     }
 
@@ -176,6 +188,14 @@
         setupPad("receiver_signature_full_pad", "receiver_signature_full_img");
         setupPad("receiver_signature_partial_pad", "receiver_signature_partial_img");
         setupPad("receiver_signature_failed_pad", "receiver_signature_failed_img");
+
+        // Resize pads on window resize
+        window.addEventListener('resize', function() {
+            Object.keys(pads).forEach(function(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                if (canvas) resizeCanvas(canvas);
+            });
+        });
 
         // Add more photo inputs dynamically
         document.getElementById('add-photo-btn').addEventListener('click', function() {
