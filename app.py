@@ -15,10 +15,10 @@ from reportlab.lib import colors
 app = Flask(__name__)
 
 # Folder setup
-JOB_FOLDER = "jobs"
-QR_FOLDER = "qr"
-LOG_FOLDER = "log"
-PHOTO_FOLDER = "photos"
+JOB_FOLDER = "/data/jobs"
+QR_FOLDER = "/data/qr"
+LOG_FOLDER = "/data/log"
+PHOTO_FOLDER = "/data/photos"
 for folder in [JOB_FOLDER, QR_FOLDER, LOG_FOLDER, PHOTO_FOLDER]:
     os.makedirs(folder, exist_ok=True)
 
