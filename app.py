@@ -258,33 +258,45 @@ def get_photo(loadsheet,event,filename):
     path=os.path.join(PHOTO_FOLDER,loadsheet,event,filename)
     return send_file(path)
 
+import os
+import tempfile
+import pandas as pd
+from flask import send_file, current_app
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.utils import ImageReader
+from reportlab.lib import colors
+
 @app.route("/generate_docket/<loadsheet>")
 def generate_docket(loadsheet):
     dispatch_csv = os.path.join(LOG_FOLDER, "dispatch_log.csv")
     event_csv    = os.path.join(LOG_FOLDER, f"{loadsheet}_events.csv")
 
-    # Ensure logs exist
+    # 1) Check logs exist
     if not os.path.exists(dispatch_csv) or not os.path.exists(event_csv):
+        current_app.logger.error(f"Missing data for {loadsheet}: {dispatch_csv} or {event_csv}")
         return f"Missing data for {loadsheet}", 404
 
-    # Load data
-    dispatch_df = pd.read_csv(dispatch_csv, dtype=str).fillna('')
-    event_df    = pd.read_csv(event_csv,    dtype=str).fillna('')
-    dispatch_row = dispatch_df[dispatch_df["Loadsheet No"] == loadsheet].iloc[0]
+    # 2) Load data
+    dispatch_df = pd.read_csv(dispatch_csv, dtype=str).fillna("")
+    event_df    = pd.read_csv(event_csv,    dtype=str).fillna("")
+    dispatch_row = dispatch_df.loc[dispatch_df["Loadsheet No"] == loadsheet].iloc[0]
 
-    # Create a temp file on disk
+    # 3) Create temp file
     tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
     pdf_path = tmp.name
     tmp.close()
+    current_app.logger.info(f"Generating PDF at {pdf_path}")
 
-    # Generate PDF directly to disk
+    # 4) Start PDF
     c = canvas.Canvas(pdf_path, pagesize=A4)
     width, height = A4
 
-    # Header
+    # — Header —
     logo_path = os.path.join("static", "logo.jpg")
     if os.path.exists(logo_path):
-        c.drawImage(ImageReader(logo_path), 50, height - 80, width=100, preserveAspectRatio=True, mask='auto')
+        c.drawImage(ImageReader(logo_path), 50, height - 80, width=100,
+                    preserveAspectRatio=True, mask='auto')
     c.setFillColor(colors.HexColor("#004080"))
     c.rect(0, height - 100, width, 30, fill=1)
     c.setFillColor(colors.white)
@@ -292,7 +304,7 @@ def generate_docket(loadsheet):
     c.drawString(200, height - 90, "Proof of Delivery")
     c.setFillColor(colors.black)
 
-    # Job Information
+    # — Job Information —
     c.setFont("Helvetica-Bold", 11)
     y = height - 130
     c.drawString(50, y, "Job Information")
@@ -310,11 +322,11 @@ def generate_docket(loadsheet):
     c.drawString(50, y, f"Panels: {dispatch_row['Panel IDs']}")
     y -= 20
 
-    # Prepare and draw events (same as before)...
+    # — Events & Images —
     full_panel_list = dispatch_row['Panel IDs'].split(";")
     event_titles = {
         "leaving_ap":   "LEAVING ADVANCED PRECAST",
-        "arrived_site": "ARRIVED SITE",
+        "arrived_site": "ARRIVED AT SITE",
         "left_site":    "LEFT SITE"
     }
 
@@ -323,9 +335,12 @@ def generate_docket(loadsheet):
         if ev_df.empty:
             continue
 
+        # New page if needed
         if y < 120:
             c.showPage()
             y = height - 80
+
+        # Section header
         c.setFont("Helvetica-Bold", 11)
         c.drawString(50, y, event_titles[event_type])
         y -= 4
@@ -334,6 +349,11 @@ def generate_docket(loadsheet):
         c.setFont("Helvetica", 9)
 
         event_dir = os.path.join(PHOTO_FOLDER, loadsheet, event_type)
+        current_app.logger.info(f"Looking for images in {event_dir}")
+        if os.path.isdir(event_dir):
+            for fn in sorted(os.listdir(event_dir)):
+                current_app.logger.info(f"  Found file: {fn}")
+
         for _, row in ev_df.iterrows():
             if y < 120:
                 c.showPage()
@@ -343,25 +363,85 @@ def generate_docket(loadsheet):
             c.drawString(50, y, f"Timestamp: {row['Timestamp']}")
             y -= 12
 
-            # (AP Staff, left_site logic, photos, etc. — identical to your existing code)
+            # AP staff signature
+            if event_type == "leaving_ap" and row.get("AP Staff"):
+                c.drawString(50, y, f"AP Staff: {row['AP Staff']}")
+                y -= 12
+                if os.path.isdir(event_dir):
+                    for fn in os.listdir(event_dir):
+                        if fn.startswith("ap_signature_"):
+                            path = os.path.join(event_dir, fn)
+                            c.drawImage(ImageReader(path), 50, y-60, width=200, height=50,
+                                        preserveAspectRatio=True, mask='auto')
+                            y -= 70
+                            break
+
+            # Left-site details
+            if event_type == "left_site" and row.get("Delivery Outcome"):
+                c.drawString(50, y, f"Outcome: {row['Delivery Outcome']}")
+                y -= 12
+                if row.get("Receiver Signature"):
+                    c.drawString(50, y, f"Receiver: {row['Receiver Signature']}")
+                    y -= 12
+                    if os.path.isdir(event_dir):
+                        for fn in os.listdir(event_dir):
+                            if fn.startswith("receiver_"):
+                                path = os.path.join(event_dir, fn)
+                                c.drawImage(ImageReader(path), 50, y-60, width=200, height=50,
+                                            preserveAspectRatio=True, mask='auto')
+                                y -= 70
+                                break
+                if row.get("Failure Reason"):
+                    c.drawString(50, y, f"Reason: {row['Failure Reason']}")
+                    y -= 12
+                if row.get("Delivered Panels"):
+                    delivered = row['Delivered Panels'].split(";")
+                    undelivered = [p for p in full_panel_list if p not in delivered]
+                    c.drawString(50, y, f"Delivered Panels: {', '.join(delivered)}")
+                    y -= 12
+                    c.drawString(50, y, f"Undelivered: {', '.join(undelivered)}")
+                    y -= 12
+
+            # Truck photos
+            photos = [fn for fn in row.get("Photos", "").split(";") if fn]
+            if os.path.isdir(event_dir):
+                for fn in photos:
+                    if fn.startswith("ap_signature_") or fn.startswith("receiver_"):
+                        continue
+                    pth = os.path.join(event_dir, fn)
+                    if os.path.exists(pth):
+                        try:
+                            c.drawImage(ImageReader(pth), 50, y-100, width=120, height=90,
+                                        preserveAspectRatio=True, mask='auto')
+                            c.setFont("Helvetica-Oblique", 7)
+                            c.drawString(50, y-110, fn)
+                            y -= 120
+                        except Exception as e:
+                            current_app.logger.error(f"Failed to draw {pth}: {e}")
+                            c.setFont("Helvetica", 8)
+                            c.drawString(50, y, f"Could not load {fn}")
+                            y -= 15
 
             y -= 6
 
-    # Footer
+    # — Footer —
     c.setFont("Helvetica-Oblique", 8)
     c.setFillColor(colors.gray)
     c.drawString(50, 40, "Generated by Advanced Precast Transport App")
 
     c.save()
 
-    # Stream file back and then delete it
+    # 6) Log file size
+    size = os.path.getsize(pdf_path)
+    current_app.logger.info(f"PDF saved: {size} bytes")
+
+    # 7) Stream and clean up
     response = send_file(
         pdf_path,
         download_name=f"docket_{loadsheet}.pdf",
         as_attachment=True,
-        mimetype='application/pdf'
+        mimetype="application/pdf"
     )
-
     @response.call_on_close
     def cleanup():
         try:
@@ -370,6 +450,7 @@ def generate_docket(loadsheet):
             pass
 
     return response
+
 
 @app.route("/edit_event", methods=["GET", "POST"])
 def edit_event():
