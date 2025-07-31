@@ -417,7 +417,7 @@ def generate_docket(loadsheet):
                             c.drawImage(ImageReader(pth), 50, y-200, width=240, height=180,
                                         preserveAspectRatio=True, mask='auto')
                             c.setFont("Helvetica-Oblique", 7)
-                            c.drawString(50, y-110, fn)
+                            c.drawString(50, y-210, fn)
                             y -= 240
                         except Exception as e:
                             current_app.logger.error(f"Failed to draw {pth}: {e}")
