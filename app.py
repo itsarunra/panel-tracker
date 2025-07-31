@@ -12,6 +12,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from reportlab.lib import colors
 import tempfile
+from zoneinfo import ZoneInfo
 
 app = Flask(__name__)
 
@@ -22,6 +23,8 @@ LOG_FOLDER = "/data/log"
 PHOTO_FOLDER = "/data/photos"
 for folder in [JOB_FOLDER, QR_FOLDER, LOG_FOLDER, PHOTO_FOLDER]:
     os.makedirs(folder, exist_ok=True)
+
+now = datetime.now(ZoneInfo("Australia/Melbourne"))
 
 @app.route("/")
 def home():
@@ -44,7 +47,7 @@ def upload():
         # Log dispatch upload
         dispatch_log = os.path.join(LOG_FOLDER, "dispatch_log.csv")
         dispatch_entry = pd.DataFrame([{
-            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
             "Loadsheet No": loadsheet_no,
             "Job No":       job_no,
             "Description":  job_desc,
@@ -108,7 +111,7 @@ def submit_event():
     loadsheet  = request.form.get("loadsheet")
     job_no     = request.form.get("job_no")
     event_type = request.form.get("event_type")
-    timestamp  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
 
     # Base log_data structure
     log_data = {
