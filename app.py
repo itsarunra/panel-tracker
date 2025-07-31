@@ -414,11 +414,11 @@ def generate_docket(loadsheet):
                     pth = os.path.join(event_dir, fn)
                     if os.path.exists(pth):
                         try:
-                            c.drawImage(ImageReader(pth), 50, y-100, width=120, height=90,
+                            c.drawImage(ImageReader(pth), 50, y-200, width=240, height=180,
                                         preserveAspectRatio=True, mask='auto')
                             c.setFont("Helvetica-Oblique", 7)
                             c.drawString(50, y-110, fn)
-                            y -= 120
+                            y -= 240
                         except Exception as e:
                             current_app.logger.error(f"Failed to draw {pth}: {e}")
                             c.setFont("Helvetica", 8)
